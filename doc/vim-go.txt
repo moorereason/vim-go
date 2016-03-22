@@ -210,12 +210,11 @@ COMMANDS                                                          *go-commands*
     If [!] is not given the first error is jumped to.
 
                                                                      *:GoDef*
-:GoDef [identifier]
+:GoDef
 
-    Goto declaration/definition for the given [identifier]. If no argument is
-    given, it will jump to the declaration under the cursor. By default the
-    mapping `gd` is enabled to invoke GoDef for the identifier under the cursor.
-    See |g:go_def_mapping_enabled| to disable it.
+    Goto declaration/definition under the cursor. By default the mapping `gd`
+    is enabled to invoke GoDef for the identifier under the cursor.  See
+    |g:go_def_mapping_enabled| to disable it.
 
                                                                      *:GoRun*
 :GoRun[!] [expand]

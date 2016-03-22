@@ -1,5 +1,5 @@
-if !exists("g:go_godef_bin")
-	let g:go_godef_bin = "godef"
+if !exists("g:go_guru_bin")
+	let g:go_guru_bin = "guru"
 endif
 
 if go#vimproc#has_vimproc()
@@ -12,15 +12,8 @@ fu! s:system(str, ...)
 	return call(s:vim_system, [a:str] + a:000)
 endf
 
-" modified and improved version of vim-godef
-function! go#def#Jump(...)
-	if !len(a:000)
-		let arg = "-o=" . go#util#OffsetCursor()
-	else
-		let arg = a:1
-	endif
-
-	let bin_path = go#path#CheckBinPath(g:go_godef_bin)
+function! go#def#Jump(mode)
+	let bin_path = go#path#CheckBinPath(g:go_guru_bin)
 	if empty(bin_path)
 		return
 	endif
@@ -29,83 +22,48 @@ function! go#def#Jump(...)
 	let $GOPATH = go#path#Detect()
 
 	let fname = fnamemodify(expand("%"), ':p:gs?\\?/?')
-	let command = bin_path . " -f=" . shellescape(fname) . " -i " . shellescape(arg)
+	let command = printf("%s definition %s:#%s", bin_path, shellescape(fname), go#util#OffsetCursor())
 
-	" get output of godef
-	let out = s:system(command, join(getbufline(bufnr('%'), 1, '$'), go#util#LineEnding()))
+	let out = s:system(command)
 
-	" jump to it
-	call s:godefJump(out, "")
+	call s:jump_to_declaration(out, a:mode)
 	let $GOPATH = old_gopath
 endfunction
 
-
-function! go#def#JumpMode(mode)
-	let arg = "-o=" . go#util#OffsetCursor()
-
-	let bin_path = go#path#CheckBinPath(g:go_godef_bin)
-	if empty(bin_path)
-		return
-	endif
-
-	let old_gopath = $GOPATH
-	let $GOPATH = go#path#Detect()
-
-	let fname = fnamemodify(expand("%"), ':p:gs?\\?/?')
-	let command = bin_path . " -f=" . shellescape(fname) . " -i " . shellescape(arg)
-
-	" get output of godef
-	let out = s:system(command, join(getbufline(bufnr('%'), 1, '$'), go#util#LineEnding()))
-
-	call s:godefJump(out, a:mode)
-	let $GOPATH = old_gopath
-endfunction
-
-
-function! s:getOffset()
-	return "-o=" . go#util#OffsetCursor()
-endfunction
-
-
-function! s:godefJump(out, mode)
+function! s:jump_to_declaration(out, mode)
 	let old_errorformat = &errorformat
-	let &errorformat = "%f:%l:%c"
+	let &errorformat = "%f:%l:%c:\ %m"
 
-	if a:out =~ 'godef: '
-		let out = substitute(a:out, go#util#LineEnding() . '$', '', '')
-		echom out
-	else
-		let parts = split(a:out, ':')
-		" parts[0] contains filename
-		let fileName = parts[0]
+	let parts = split(a:out, ':')
 
-		" put the error format into location list so we can jump automatically to
-		" it
-		lgetexpr a:out
+	" parts[0] contains filename
+	let fileName = parts[0]
 
-		" needed for restoring back user setting this is because there are two
-		" modes of switchbuf which we need based on the split mode
-		let old_switchbuf = &switchbuf
+	" put the error format into location list so we can jump automatically to it
+	lgetexpr a:out
 
-		if a:mode == "tab"
-			let &switchbuf = "usetab"
+	" needed for restoring back user setting this is because there are two
+	" modes of switchbuf which we need based on the split mode
+	let old_switchbuf = &switchbuf
 
-			if bufloaded(fileName) == 0
-				tab split
-			endif
-		else
-			if a:mode  == "split"
-				split
-			elseif a:mode == "vsplit"
-				vsplit
-			endif
+	if a:mode == "tab"
+		let &switchbuf = "usetab"
+
+		if bufloaded(fileName) == 0
+			tab split
 		endif
+	else
+		if a:mode  == "split"
+			split
+		elseif a:mode == "vsplit"
+			vsplit
+		endif
+	endif
 
-		" jump to file now
-		sil ll 1
-		normal! zz
+	" jump to file now
+	sil ll 1
+	normal! zz
 
-		let &switchbuf = old_switchbuf
-	end
+	let &switchbuf = old_switchbuf
 	let &errorformat = old_errorformat
 endfunction

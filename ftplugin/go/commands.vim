@@ -32,7 +32,7 @@ command! -nargs=* -bang GoCoverage call go#cmd#Coverage(<bang>0, <f-args>)
 command! -nargs=0 -range=% GoPlay call go#play#Share(<count>, <line1>, <line2>)
 
 " -- def
-command! -nargs=* -range GoDef :call go#def#Jump(<f-args>)
+command! -nargs=* -range GoDef :call go#def#Jump('')
 
 " -- doc
 command! -nargs=* -range -complete=customlist,go#package#Complete GoDoc call go#doc#Open('new', 'split', <f-args>)
